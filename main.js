@@ -125,7 +125,23 @@ async function check_and_mute_cached_tabs(){
     }
 }
 
+function get_options() {
+    // Retrieve stored options
+    browser.storage.local.get(["update_interval", "tabs_to_mute"]).then(function(result) {
+    var update_interval = Number(result.update_interval);
+    var tabs_to_mute = result.tabs_to_mute;
+
+    // Use the retrieved values as needed
+    console.log("Textbox value:", update_interval);
+    console.log("Radio option:", tabs_to_mute);
+    }).catch(function(error) {
+    console.error("Error retrieving options:", error);
+    });
+
+}
+
 async function main(){
+    get_options();
     await update_cache_tabs();
     check_and_mute_cached_tabs();
     console.debug("cached_tabs = ", cached_tabs);

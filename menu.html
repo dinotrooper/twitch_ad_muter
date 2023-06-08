@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Options Menu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    input[type="text"] {
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Options Menu</h1>
+
+  <label>
+    Update Interval (ms) - increasing the value should increase performance but will also increase the delay between when an ad starts and when it is muted:
+    <input type="text" id="update_interval">
+  </label>
+
+  <label>
+    Tabs to Mute:
+    <br>
+    <input type="radio" name="tabs_to_mute" value="all_tabs" id="all_tabs">
+    <label for="all_tabs">All tabs</label>
+    <br>
+    <input type="radio" name="tabs_to_mute" value="only_activate_tab" id="only_activate_tab">
+    <label for="only_activate_tab">Only the activate tab</label>
+  </label>
+
+  <button id="saveButton">Save</button>
+
+  <script src="options.js"></script>
+</body>
+</html>
