@@ -1,4 +1,4 @@
-import { tabs } from 'webextension-polyfill';
+var tabs = browser.tabs;
 
 const cached_tabs = [];
 
