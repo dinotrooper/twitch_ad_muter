@@ -1,5 +1,5 @@
 var tabs = browser.tabs;
-
+let delay_log = false;
 const cached_tabs = [];
 
 function is_tab_already_cached(tab_id) {
@@ -12,15 +12,18 @@ function is_tab_already_cached(tab_id) {
 }
 
 async function has_tab_been_deleted(tab_id) {
-    let allTabs = await tabs.query({});
-    for (let tab of allTabs) {
+    let twitch_tabs = await get_twitch_tabs();
+    for (let tab of twitch_tabs) {
         if (tab.id == tab_id) {
-            console.debug("found cached_tab: ", tab.id);
             return false;
         }
     }
-    console.debug("didin't find tab_id = ", tab_id);
     return true;
+}
+
+async function get_twitch_tabs() {
+    let twitch_tabs = await tabs.query({url:"*://*.twitch.tv/*"});
+    return twitch_tabs;
 }
 
 async function click_mute_button(tab_id) {
@@ -38,41 +41,17 @@ async function click_mute_button(tab_id) {
     }
 }
 
-async function is_not_twitch_tab(tab_id) {
-    let url; 
-    let allTabs = await tabs.query({});
-    for (let tab of allTabs) {
-        if (tab.id == tab_id) {
-            url = tab.url;
-            break;
-        }
-    }
-    console.debug("url = ", url);
-    return !url.includes("twitch.tv");
-}
-
 async function update_cache_tabs(){
     try {
-        console.debug("updating cached_tabs");
-        let allTabs = await tabs.query({});
-        for (let tab of allTabs) {
-            let result = await is_not_twitch_tab(tab.id);
-            if (result){
-                console.debug("skipping tab id: ", tab.id)
-                continue;
-            }
+        let twitch_tabs = await get_twitch_tabs();
+        for (let tab of twitch_tabs) {
             if (!is_tab_already_cached(tab.id)) {
                 let cached_tab = {id: tab.id, muted: false}; 
-                console.debug("adding tab: ", cached_tab);
                 cached_tabs.push(cached_tab);
             }
         }
         for (let cached_tab of cached_tabs) {
             let result = await has_tab_been_deleted(cached_tab.id);
-            if (result) {
-                remove_cached_tab(cached_tab);
-            }
-            result = await is_not_twitch_tab(cached_tab.id); 
             if (result) {
                 remove_cached_tab(cached_tab);
             }
@@ -84,7 +63,6 @@ async function update_cache_tabs(){
 
 function remove_cached_tab(cached_tab) {
     let index = cached_tabs.indexOf(cached_tab);
-    console.debug("removing tab: ", cached_tab, " at index ", index);
     cached_tabs.splice(index, 1);
 }
 
@@ -109,12 +87,12 @@ async function check_and_mute_cached_tabs(){
                 continue;
             }
             if (result[0] && !tab.muted) {
-                console.debug("muting tab ", tab.id)
+                console.debug("Muting Twitch stream: ", tab.id);
                 // await tabs.update(tab.id, {muted: true});
                 update_cached_tab(tab.id, true);
                 await click_mute_button(tab.id);
             } else if (!result[0] && tab.muted) {
-                console.debug("unmuting tab ", tab.id)
+                console.debug("Unmuting Twitch stream: ", tab.id);
                 // await tabs.update(tab.id, {muted: false});
                 update_cached_tab(tab.id, false);
                 await click_mute_button(tab.id);
@@ -128,7 +106,12 @@ async function check_and_mute_cached_tabs(){
 async function main(){
     await update_cache_tabs();
     check_and_mute_cached_tabs();
-    console.debug("cached_tabs = ", cached_tabs);
+    if (delay_log){
+        delay_log = false;
+    } else {
+        delay_log = true;
+        console.log("cached tabs = ", cached_tabs);
+    }
 }
 
 async function check_and_mute_tabs() {
@@ -142,11 +125,11 @@ async function check_and_mute_tabs() {
                 continue;
             }
             if (result[0]) {
-                console.log("muting tab ", tab.id)
+                console.log("muting tab ", tab.id);
                 // await tabs.update(tab.id, {muted: true});
                 click_mute_button(tab.id);
             } else {
-                console.log("unmuting tab ", tab.id)
+                console.log("unmuting tab ", tab.id);
                 // await tabs.update(tab.id, {muted: false});
                 click_mute_button(tab.id);
             }
