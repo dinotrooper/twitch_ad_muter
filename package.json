@@ -1,8 +1,8 @@
 {
   "name": "twitch_ad_mute",
-  "version": "0.2.0",
+  "version": "2.0.1",
   "description": "Browser extension to mute twitch ads.",
-  "main": "index.js",
+  "main": "mute_tab.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
