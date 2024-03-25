@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Mute Twitch Ads",
-  "version": "1.4",
+  "version": "2.0.0",
   "description": "Will automatically mute any Twitch streams if it plays an add.",
   "permissions": ["*://www.twitch.tv/*"],
   "background": {
