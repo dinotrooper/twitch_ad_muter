@@ -1,15 +1,17 @@
 {
   "manifest_version": 2,
   "name": "Mute Twitch Ads",
-  "version": "1.4",
+  "version": "0.2.0",
   "description": "Will automatically mute any Twitch streams if it plays an add.",
   "permissions": ["*://www.twitch.tv/*"],
-  "background": {
-    "scripts": [
-      "browser-polyfill.js",
-      "main.js"
-    ]
-  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.twitch.tv/*"],
+      "js": [
+        "mute_tab.js"
+      ]
+    }
+  ],
   "browser_action": {
     "default_icon": {
       "48": "twitch_ad_mute_icon_48.png"
