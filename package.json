@@ -4,7 +4,7 @@
   "description": "Browser extension to mute twitch ads.",
   "main": "mute_tab.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "author": "Alex Ward",
   "license": "ISC",

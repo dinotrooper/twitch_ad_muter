@@ -1,74 +1,26 @@
-var user_muted = false;
-var prev_muted = false;
-var init_status = false;
-var old_url = window.location.href;
-var tab_title = document.title
+/**
+ * True only while the stream is muted because the addon muted it for an ad.
+ * Any other mute state belongs to the user and is left alone.
+**/
+var muted_by_addon = false;
+/**
+ * True when the user unmuted during the current ad, so it is not muted again
+ * until the next ad.
+**/
+var user_unmuted_ad = false;
 
-var mute_button = document.querySelector('[data-a-target="player-mute-unmute-button"]'); 
-if (!mute_button) {
-    console.error(`Cannot find mute button on ${tab_title}`);
-}
 const CHECK_INTERVAL_MS = 1000;
 const true_button_label = "Unmute (m)";
 
-async function update_url() { 
-    new_url = window.location.href;
-    if (new_url !== old_url) {
-        console.debug(`URL changed to ${new_url}`);
-        old_url = new_url;
-        tab_title = document.title;
-        /**
-         * When a user changes channels, the page finishes loading first before
-         * the mute button element is present. We have to wait before we can
-         * check the status of the mute button.
-        **/
-        setTimeout(update_mute_button, 1000);
-    }
-    return Promise.resolve();
+/**
+ * Twitch re-renders the player when changing channels (and sometimes around
+ * ads), so the mute button is looked up fresh on every check instead of cached.
+**/
+function get_mute_button() {
+    return document.querySelector('[data-a-target="player-mute-unmute-button"]');
 }
-function update_mute_button() {
-    console.debug("looking for new mute button.");
-    /**
-     * If the user visited a previous channel in this tab, we need to remove the previous
-     * mute button event listener.
-    **/
-    if (mute_button) {
-        mute_button.removeEventListener("click", update_user_muted);
-    }
-    mute_button = document.querySelector('[data-a-target="player-mute-unmute-button"]');
-    if (mute_button){
-        init_status = is_button_muted(mute_button);
-        console.debug(`init_status = ${init_status}`);
-        mute_button.addEventListener("click", update_user_muted);
-    } else {
-        console.error(`Cannot find mute button on ${tab_title}`);
-    }
-}
-
-function update_user_muted(event) {
-    console.debug("isTrusted = " + event.isTrusted);
-    if (!event.isTrusted) {
-        console.debug(`Not a user click. Ignoring.`);
-    }
-    else if (is_button_muted(mute_button)){
-        console.debug(`User unmuted stream on ${tab_title}`);
-        user_muted = false;
-        init_status = false;
-    }
-    else {
-        console.log(`User muted stream on ${tab_title}`);
-        user_muted = true;
-    }
-}
-
-setInterval(async () => {
-    await update_url();
-    await main();
-}, CHECK_INTERVAL_MS);
-
 
 function is_button_muted(button) {
-    console.debug(`button.ariaLabel = ${button.ariaLabel}`);
     return button.ariaLabel == true_button_label;
 }
 
@@ -76,25 +28,46 @@ function is_ad_current() {
     return document.querySelector('[data-a-target="video-ad-label"]') != null;
 }
 
-async function main(){
+function main() {
+    const mute_button = get_mute_button();
     if (!mute_button) {
-        console.error(`Mute button is not present on ${tab_title}.`);
+        console.debug(`Mute button is not present on ${document.title}.`);
+        return;
     }
-    else if (init_status || user_muted) {
-        console.debug(`Tab started muted or user muted stream on ${tab_title}.`);
+    const is_muted = is_button_muted(mute_button);
+    const ad_current = is_ad_current();
+
+    if (!ad_current) {
+        user_unmuted_ad = false;
     }
-    else if (user_muted) {
-        console.debug(`User manually muted stream on ${tab_title}.`)
+
+    if (muted_by_addon && !is_muted) {
+        // The user unmuted during the ad (or the player was reset). Respect it.
+        console.debug(`Stream was unmuted outside the addon on ${document.title}.`);
+        muted_by_addon = false;
+        user_unmuted_ad = ad_current;
     }
-    else if (is_ad_current() && !prev_muted) {
-        console.debug(`Ad is present on ${tab_title}. Muting stream.`)
+    else if (ad_current && !is_muted && !muted_by_addon && !user_unmuted_ad) {
+        console.debug(`Ad is present on ${document.title}. Muting stream.`);
         mute_button.click();
-        prev_muted = true;
+        muted_by_addon = true;
     }
-    else if (!is_ad_current() && prev_muted) {
-        console.debug(`Ad is not present ${tab_title}. Unmuting stream.`)
+    else if (!ad_current && muted_by_addon) {
+        console.debug(`Ad is not present on ${document.title}. Unmuting stream.`);
         mute_button.click();
-        prev_muted = false;
+        muted_by_addon = false;
     }
-    return Promise.resolve();
+}
+
+if (typeof module !== "undefined") {
+    // Running under Node for tests: expose main and a state reset instead of polling.
+    module.exports = {
+        main,
+        reset_state() {
+            muted_by_addon = false;
+            user_unmuted_ad = false;
+        },
+    };
+} else {
+    setInterval(main, CHECK_INTERVAL_MS);
 }
