@@ -15,9 +15,17 @@ const true_button_label = "Unmute (m)";
 /**
  * Twitch re-renders the player when changing channels (and sometimes around
  * ads), so the mute button is looked up fresh on every check instead of cached.
+ * The player also keeps a hidden copy of its controls, so prefer a button that
+ * is not inside a hidden element.
 **/
 function get_mute_button() {
-    return document.querySelector('[data-a-target="player-mute-unmute-button"]');
+    const buttons = document.querySelectorAll('[data-a-target="player-mute-unmute-button"]');
+    for (const button of buttons) {
+        if (!button.closest("[hidden]")) {
+            return button;
+        }
+    }
+    return buttons[0] || null;
 }
 
 function is_button_muted(button) {
@@ -63,6 +71,9 @@ if (typeof module !== "undefined") {
     // Running under Node for tests: expose main and a state reset instead of polling.
     module.exports = {
         main,
+        get_mute_button,
+        is_button_muted,
+        is_ad_current,
         reset_state() {
             muted_by_addon = false;
             user_unmuted_ad = false;

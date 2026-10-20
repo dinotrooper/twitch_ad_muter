@@ -17,13 +17,19 @@ function create_page() {
         click() {
             page.muted = !page.muted;
         },
+        closest() {
+            return null;
+        },
     };
     global.document = {
         title: "test channel",
-        querySelector(selector) {
+        querySelectorAll(selector) {
             if (selector.includes("player-mute-unmute-button")) {
-                return page.has_button ? button : null;
+                return page.has_button ? [button] : [];
             }
+            return [];
+        },
+        querySelector(selector) {
             if (selector.includes("video-ad-label")) {
                 return page.ad ? {} : null;
             }
